@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D06C0B4D1E78305B0068A2BC /* slow-cgi.c in Sources */ = {isa = PBXBuildFile; fileRef = D06C0B4B1E78305B0068A2BC /* slow-cgi.c */; };
 		D06F7D071E680DE80007A6B1 /* read_config.c in Sources */ = {isa = PBXBuildFile; fileRef = D06F7D051E680DE80007A6B1 /* read_config.c */; };
 		D093306B1E65D69C0042FC08 /* webserver.c in Sources */ = {isa = PBXBuildFile; fileRef = D093306A1E65D69C0042FC08 /* webserver.c */; };
 		D0B53CFD1E668137004A3F94 /* wrap_socket.c in Sources */ = {isa = PBXBuildFile; fileRef = D0B53CFB1E668137004A3F94 /* wrap_socket.c */; };
@@ -25,6 +26,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		D06AD5111E79435100A4E20B /* submit.php */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.php; path = submit.php; sourceTree = "<group>"; };
+		D06C0B4B1E78305B0068A2BC /* slow-cgi.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "slow-cgi.c"; sourceTree = "<group>"; };
 		D06F7D031E67EB360007A6B1 /* myhttp.conf */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = myhttp.conf; sourceTree = "<group>"; };
 		D06F7D041E68070F0007A6B1 /* file.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = file.txt; sourceTree = "<group>"; };
 		D06F7D051E680DE80007A6B1 /* read_config.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = read_config.c; sourceTree = "<group>"; };
@@ -78,6 +81,8 @@
 				D06F7D051E680DE80007A6B1 /* read_config.c */,
 				D06F7D061E680DE80007A6B1 /* read_config.h */,
 				D074258B1E686E7E006A26F8 /* aaa.html */,
+				D06C0B4B1E78305B0068A2BC /* slow-cgi.c */,
+				D06AD5111E79435100A4E20B /* submit.php */,
 			);
 			path = webserver;
 			sourceTree = "<group>";
@@ -142,6 +147,7 @@
 			files = (
 				D06F7D071E680DE80007A6B1 /* read_config.c in Sources */,
 				D0B53CFD1E668137004A3F94 /* wrap_socket.c in Sources */,
+				D06C0B4D1E78305B0068A2BC /* slow-cgi.c in Sources */,
 				D093306B1E65D69C0042FC08 /* webserver.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -1,0 +1,91 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!-- saved from url=(0083)http://write.blog.csdn.net/article/UploadImgMarkdown?parenthost=write.blog.csdn.net -->
+<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>UploadImg</title>
+    
+    <style type="text/css">
+        body {margin: 0px; padding: 20px 0; font:12px/20px 'microsoft yahei';}
+        * {box-sizing: border-box;}
+        .btn-group {position: relative; margin-right: 110px;}
+        input,button {position: absolute; top: 0;}
+        input   {width: 102%; height: 30px; opacity: 0.000001; margin-left:-2%;}
+        button   {width: 100px; height: 30px; background: #ddd; right: -110px; border: 1px solid #ddd; color: #666;}
+        .label {height: 30px; border: 1px solid #eee; line-height: 30px; white-space: nowrap; overflow: hidden; color: #777;}
+        .label b {display: inline-block; padding: 0 15px; background:#eee; border-right: 1px solid rgba(0,0,0,0.05); margin-right: 10px;}
+        p   {margin:10px 0px; color: #999;}
+        .preview_box {width: 160px; height: 160px; margin:0 auto; border: 1px solid #eee; text-align: center; display: table;}
+        #preview {display: table-cell; vertical-align: middle;}
+        #preview img {max-width: 150px; max-height: 150px;}
+
+
+        #sp_err {color: #ff0000;}
+    </style>
+</head>
+<body>
+    <form action="http://write.blog.csdn.net/article/UploadImgMarkdown?parenthost=write.blog.csdn.net" method="post" enctype="multipart/form-data" onsubmit="return chkForm();">
+        <div class="btn-group">
+            <div class="label"><b>选择图片</b><span id="preview_val"></span></div>
+            <input id="file1" name="file1" type="file" required="required" accept="image/gif,image/jpeg,image/x-ms-bmp,image/x-png,image/png" onchange="setFile()">
+            <button id="btnUp" class="btn" type="submit">上传</button>
+        </div>
+        <p>1、图片大小不能超过<b>2M</b>，2、支持格式：.jpg .gif .png .bmp。</p>
+        <div id="sp_err"></div>
+        <div class="preview_box"><div id="preview"></div></div>
+    </form>
+    <script type="text/javascript">
+//        function GetShuiyin() {
+//            //得到父页面水印的样式
+//            if (window.parent.document.getElementById('isshuiyin1').checked) {
+//                document.getElementById('shuiyin').value = window.parent.document.getElementById('isshuiyin1').value;
+//            }
+//            if (window.parent.document.getElementById('isshuiyin2').checked) {
+//                document.getElementById('shuiyin').value = window.parent.document.getElementById('isshuiyin2').value;
+//            }
+//            if (window.parent.document.getElementById('isshuiyin3').checked) {
+//                document.getElementById('shuiyin').value = window.parent.document.getElementById('isshuiyin3').value;
+//            }
+//
+        //        }
+
+        document.domain = "csdn.net";
+        function setFile() {
+            var val = document.getElementById('file1').value;
+            document.getElementById('preview_val').innerHTML = val;
+        }
+
+
+
+        function setPath(path) {
+            document.getElementById('preview').innerHTML = "<img src='" + path + "'>";
+            parent.document.getElementById("input-insert-image").value = path;
+
+//          parent.xh.removeModal();
+        }
+        function showErr(err) {
+            if (err.indexOf("Maximum request length exceeded") > -1)
+            {
+                err = "图片大小超过限制。";
+            }
+            document.getElementById("sp_err").innerHTML = err;
+        }
+        function chkForm() {
+            var f = document.getElementById("file1").value;
+            if (!f) {
+                showErr("请选择要上传的图片。");
+                return false;
+            }
+            var ext = f.substr(f.lastIndexOf(".") + 1).toLowerCase();
+            if (".jpg.gif.png.bmp.".indexOf('.' + ext + '.') == -1) {
+                showErr("图片格式不正确。");
+                return false;
+            }
+            //GetShuiyin();
+            document.getElementById('btnUp').innerHTML = '正在上传...';
+            document.getElementById('btnUp').disabled = true;
+            return true;
+        }
+        
+    </script>
+
+
+</body></html>

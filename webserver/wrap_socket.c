@@ -5,10 +5,17 @@
 //  Created by pengge on 17/3/1.
 //  Copyright © 2017年 pengge. All rights reserved.
 //
-
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <unistd.h>
 #include "wrap_socket.h"
 
 #define MAXLINE 1000
+// char[]缓冲区大小
+#define _INT_BUF (1024)
+// listen监听队列的大小
+#define _INT_LIS (7)
 
 void p_error(char *str) {
     printf("%s\n",str);
@@ -27,8 +34,10 @@ int Socket(int family,int type,int protocol) {
 }
 
 void Bind(int fd, const struct sockaddr *sa, socklen_t len) {
-    if(bind(fd, sa, len) < 0 )
+    if(bind(fd, sa, len) < 0 ) {
         p_error("bind connect error\n");
+        exit(1);
+    }
 }
 void Listen(int fd,int backlog_size) {
     if(listen(fd, backlog_size) < 0)
@@ -45,10 +54,25 @@ void Connect(int fd,const struct sockaddr *sa,socklen_t len) {
        p_error("connect to webserver error\n");
 }
 long Read(int fd, void *buf, size_t len) {
-    long n;
-    if((n = read(fd, buf, len)) == -1)
-        p_error("read error\n");
-    return n;
+    size_t  nleft;
+    ssize_t nread;
+    char   *ptr;
+    
+    ptr = buf;
+    nleft = len;
+    while (nleft > 0) {
+        if ( (nread = read(fd, ptr, nleft)) < 0) {
+            if (errno == EINTR)
+                nread = 0;
+            else
+                return -1;
+        } else if (nread == 0)
+            break;
+        
+        nleft -= nread;
+        ptr += nread;
+    }
+    return len - nleft;
 }
 void Write(int fd, void *buf, size_t len) {
     if(write(fd, buf, len) == -1 )
@@ -59,24 +83,37 @@ void Close(int fd) {
         p_error("close fd error\n");
 }
 
+int Pipe(int pipefd[2])
+{
+    if(pipe(pipefd)==-1)
+    {
+        return -1;
+    }
+    return 1;
+}
 /*==========================*/
 /* 这里是响应请求的封装*/
 /*==========================*/
-int find_url(char *uri,char *filename) {
+int find_url(char *uri,char *filename,char *cgi_params) {
     char *ptr;
+    char temp1[MAXLINE];
+    char temp2[MAXLINE];
     //说明走的是静态网址
-    if(!strstr(uri, "cgi-bin")) {
+    if(!strstr(uri, "php")) {
         strcpy(filename, ".");
         strcat(filename, uri);
         if (uri[strlen(uri)-1] == '/')
             strcat(filename, "index.html");
-        return 1;
     }else {
         ptr = index(uri, '?');
+        sscanf(uri, "%[^?]?%s",temp1,temp2);
+        if(temp2[0] != '\0') {
+            strcpy(cgi_params, temp2);
+        }
         strcpy(filename, ".");
-        strcat(filename, uri);
-        return 0;
+        strcat(filename, temp1);
     }
+    return 1;
 }
 /**
  * @desc 获取静态文件类型
@@ -95,9 +132,14 @@ void get_filetype(char *filename, char *filetype) {
         strcpy(filetype, "text/plain");
 }
 
-void php_cgi(char* script_path, int fd) {
+void php_cgi(char* script_path, int fd,char *cgi_params) {
+    char *emptylist[] = {script_path };
+    setenv("QUERY_STRING", cgi_params, 1);
     dup2(fd, STDOUT_FILENO);
-    execl("/usr/bin/php","/usr/bin/php",script_path,(char *) NULL);
+    //execl("/usr/bin/php","php",script_path,(void *)NULL);
+    //execve("./slow-cgi", emptylist, envp);
+    execlp("./slow-cgi.cgi",script_path,(char *) NULL);
+    //execve(script_path, emptylist, environ);
 }
 /**
  * @desc 404页面的response拼接
@@ -128,10 +170,10 @@ void error_response(int connfd) {
 
 }
 /**
- * @desc 封装response  支持静态页面以及php页面
+ * @desc 封装get请求response  支持静态页面以及php页面
  *
  */
-void wrap_response(int connfd,char *filename) {
+void wrap_get_response(int connfd,char *filename,char *cgi_params) {
     struct stat sbuf;
     int filefd,phpfd;
     char *php_result;
@@ -156,7 +198,7 @@ void wrap_response(int connfd,char *filename) {
             Write(connfd, response, strlen(response));
             printf("Response headers:\n");
             printf("%s\n",response);
-            php_cgi(filename, connfd);
+            php_cgi(filename, connfd,cgi_params);
             Close(connfd);
             exit(1);
         //走静态页面输出
@@ -178,4 +220,135 @@ void wrap_response(int connfd,char *filename) {
             munmap(srcp, sbuf.st_size);
         }
     }
+}
+int getfdline(int fd, char buf[], int sz)
+{
+    char* tp = buf;
+    char c;
+    
+    --sz;
+    while((tp-buf)<sz){
+        if(read(fd, &c, 1) <= 0) //伪造结束条件
+            break;
+        if(c == '\r'){ //全部以\r分割
+            if(recv(fd, &c, 1, MSG_PEEK)>0 && c == '\n')
+                read(fd, &c, 1);
+            else //意外的结束,填充 \n 结束读取
+                *tp++ = '\n';
+            break;
+        }
+        *tp++ = c;
+    }
+    *tp = '\0';
+    return tp - buf;
+}
+ssize_t rio_readnb(int rp, void *usrbuf, size_t n)
+{
+    size_t nleft = n;
+    ssize_t nread;
+    char *bufp = usrbuf;
+    
+    while (nleft > 0) {
+        if ((nread = read(rp, bufp, nleft)) < 0) {
+            if (errno == EINTR) /* interrupted by sig handler return */
+                nread = 0;      /* call read() again */
+            else
+                return -1;      /* errno set by read() */
+        }
+        else if (nread == 0)
+            break;              /* EOF */
+        nleft -= nread;
+        bufp += nread;
+    }
+    return (n - nleft);         /* return >= 0 */
+}
+ssize_t rio_writen(int fd, void *usrbuf, size_t n)
+{
+    size_t nleft = n;
+    ssize_t nwritten;
+    char *bufp = usrbuf;
+    
+    while (nleft > 0) {
+        if ((nwritten = write(fd, bufp, nleft)) <= 0) {
+            if (errno == EINTR)  /* interrupted by sig handler return */
+                nwritten = 0;    /* and call write() again */
+            else
+                return -1;       /* errorno set by write() */
+        }
+        nleft -= nwritten;
+        bufp += nwritten;
+    }
+    return n;
+}
+/*
+ * 处理客户端的http请求.
+ * cfd		: 客户端文件描述符
+ * path		: 请求的文件路径
+ * query	: 请求发送的过来的数据, url ? 后面那些数据
+ */
+void request_cgi(int fd, const char* path, const char* query)
+{
+    char buf[MAXLINE],data[MAXLINE];
+    char contlen_string[MAXLINE];
+    int p[2];
+    pid_t pid;
+    int contlen = -1; //报文长度
+    char c;
+    while(getfdline(fd, buf, sizeof(buf))>0){
+        buf[15] = '\0';
+        if(!strcasecmp(buf, "Content-Length:"))
+            contlen = atoi(buf + 16);
+    }
+    if(contlen == -1){ //错误的报文,直接返回错误结果
+        p_error("contlen error");
+        return;
+    }
+    
+    sprintf(buf, "HTTP/1.0 200 OK\r\n");
+    sprintf(buf, "%sServer: Tiny Web Server\r\n",buf);
+    sprintf(buf, "%sContent-Type:text/html\r\n",buf);
+    
+    sprintf(contlen_string, "%d", contlen);
+    setenv("CONTENT-LENGTH",contlen_string , 1);
+    
+    
+    read(fd, data, contlen);
+    printf("post data= %s\n",data);
+    
+    write(fd, buf, strlen(buf));
+    dup2(fd,STDOUT_FILENO);
+    execlp("./slow-cgi.cgi", path, (char *) NULL);
+    exit(1);
+    /*
+    Read(fd, data, contlen);
+    //rio_readnb(fd,data,contlen);
+    printf("data=%s\n",data);
+    printf("contlen=%d\n",contlen);
+    exit(1);
+    Pipe(p);
+    if (fork() == 0)
+    {
+        rio_readnb(fd,data,contlen);
+        rio_writen(p[1],data,contlen);
+        //setenv("CONTENT-LENGTH","40" , 1);
+        dup2(fd,STDOUT_FILENO);
+        execlp("./slow-cgi.cgi", path, (void *) NULL);
+    }
+    
+
+    sprintf(buf, "HTTP/1.0 200 OK\r\n");
+    sprintf(buf, "%sServer: Tiny Web Server\r\n",buf);
+    setenv("CONTENT-LENGTH",contlen , 1);
+    
+    rio_writen(fd, buf, strlen(buf));
+    
+    //Wait(NULL);
+    dup2(p[0],STDIN_FILENO);
+    Close(p[0]);
+    
+    Close(p[1]);
+
+    //dup2(fd,STDOUT_FILENO);
+    //execlp("./slow-cgi.cgi", path, (void *) NULL);
+     */
 }

@@ -12,6 +12,8 @@ $array = array(
     "yes" => "sdsdfsfsff"
 );
 echo "<pre>";
+var_dump($_GET);
+var_dump($_SERVER);
 var_dump($array);
 ?>
 </body>

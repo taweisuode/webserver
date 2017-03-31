@@ -33,7 +33,7 @@ int main(int argc, char * argv[]) {
     int listenfd,connfd;
     char buf[MAXLINE],first_line[MAXLINE],left_line[MAXLINE],method[MAXLINE], uri[MAXLINE], version[MAXLINE];
     char str[INET_ADDRSTRLEN];
-    char filename[MAXLINE];
+    char filename[MAXLINE],cgi_params[MAXLINE];
     long n;
     int i,pid;
     
@@ -70,30 +70,30 @@ int main(int argc, char * argv[]) {
                     printf("the other side has been closed.\n");
                     break;
                 }
-                printf("received from %s at PORT %d,message is %s\n",
-                       inet_ntop(AF_INET, &cliaddr.sin_addr, str, sizeof(str)),
-                       ntohs(cliaddr.sin_port),buf);
+                //printf("received from %s at PORT %d,message is %s\n",inet_ntop(AF_INET, &cliaddr.sin_addr, str, sizeof(str)),ntohs(cliaddr.sin_port),buf);
                 //解析来自浏览器的buf
-                printf("buf=%s\n",buf);
-                sscanf(buf, "%s %s %s", method, uri, version);
+                sscanf(buf, "%s %s %s",method,uri,version);
                 printf("method:%s\n",method);
                 printf("uri:%s\n",uri);
                 printf("version:%s\n",version);
-                
                 //这块先支持get请求
+                
                 if(strcasecmp(method, "GET") == 0 && strstr(version,"HTTP")) {
-                    printf("method=%s,uri=%s\n",method,uri);
-                    if(find_url(uri,filename)) {
-                        printf("filename=%s\n",filename);
-                        wrap_response(connfd,filename);
+                    if(find_url(uri,filename,cgi_params)) {
+                        wrap_get_response(connfd,filename,cgi_params);
                     }
                     
+                }else if(strcasecmp(method, "POST") == 0 && strstr(version,"HTTP")) {
+                    if(find_url(uri,filename,cgi_params)) {
+                        request_cgi(connfd,filename,cgi_params);
+                    }
                 }
             }
             Close(connfd);
             exit(0);
         }else {
             Close(connfd);
+            continue;
         }
 
     }
