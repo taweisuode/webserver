@@ -22,11 +22,32 @@ char* str_revert(char *str) {
     }
     return str;
 }
+void p_version() {
+    printf("pengge websever 1.0.0(built: April 13 2016 15:13:00)\n");
+    exit(1);
+}
+void p_help() {
+    printf("Usage\n");
+    printf("    -v          show webserver version\n");
+    printf("    --version   show webserver version\n");
+    printf("    -h          show webserver help list\n");
+    printf("    --help      show webserver help list\n");
+    exit(1);
+}
+
 /**
  * @desc webserver 主程序
  *
  */
 int main(int argc, char * argv[]) {
+    
+    if(argv[1]) {
+        if(strcasecmp(argv[1],"-v") == 0 || strcasecmp(argv[1], "--version") == 0) {
+            p_version();
+        }else if(strcasecmp(argv[1], "-h") == 0 || strcasecmp(argv[1], "--help") == 0) {
+            p_help();
+        }
+    }
     //server 端依次进行 socket(),bind(),listen(),然后进入阻塞等待client连接方法accept()
     struct sockaddr_in servaddr,cliaddr;
     socklen_t cliaddr_len;

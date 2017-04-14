@@ -314,11 +314,15 @@ void request_cgi(int fd, const char* path, const char* query)
     
     read(fd, data, contlen);
     printf("post data= %s\n",data);
-    
-    write(fd, buf, strlen(buf));
-    dup2(fd,STDOUT_FILENO);
-    execlp("./slow-cgi.cgi", path, (char *) NULL);
     exit(1);
+    sprintf(data, "HTTP/1.0 200 OK\r\n");
+    sprintf(data, "%sServer: Pengge Web Server\r\n",data);
+    sprintf(data, "%sConnection: close\r\n",data);
+    sprintf(data, "%sContent-length: %lld\r\n",response,contlen);
+    sprintf(data, "%sContent-type: %s\r\n\r\n",data,"");
+    Write(connfd, response, strlen(response));
+    printf("Response headers:\n");
+
     /*
     Read(fd, data, contlen);
     //rio_readnb(fd,data,contlen);
