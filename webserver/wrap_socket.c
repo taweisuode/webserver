@@ -318,9 +318,9 @@ void request_cgi(int fd, const char* path, const char* query)
     sprintf(data, "HTTP/1.0 200 OK\r\n");
     sprintf(data, "%sServer: Pengge Web Server\r\n",data);
     sprintf(data, "%sConnection: close\r\n",data);
-    sprintf(data, "%sContent-length: %lld\r\n",response,contlen);
+    sprintf(data, "Content-length: %lld\r\n",contlen);
     sprintf(data, "%sContent-type: %s\r\n\r\n",data,"");
-    Write(connfd, response, strlen(response));
+    Write(fd, data, strlen(data));
     printf("Response headers:\n");
 
     /*

@@ -32,6 +32,8 @@ void p_help() {
     printf("    --version   show webserver version\n");
     printf("    -h          show webserver help list\n");
     printf("    --help      show webserver help list\n");
+    printf("    --start     start webserver \n");
+    printf("    --reload    restart webserver \n");
     exit(1);
 }
 
@@ -46,7 +48,11 @@ int main(int argc, char * argv[]) {
             p_version();
         }else if(strcasecmp(argv[1], "-h") == 0 || strcasecmp(argv[1], "--help") == 0) {
             p_help();
+        }else if(strcasecmp(argv[1], "--start") == 0 || strcasecmp(argv[1], "--reload") == 0) {
+        
         }
+    }else {
+        p_help();
     }
     //server 端依次进行 socket(),bind(),listen(),然后进入阻塞等待client连接方法accept()
     struct sockaddr_in servaddr,cliaddr;
